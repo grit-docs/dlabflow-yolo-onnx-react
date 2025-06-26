@@ -14,7 +14,9 @@
 
 ## 데모
 
-![D-Lab Flow 객체 탐지 데모 스크린샷](/public/screenshot_1.jpg)
+<div align="center">
+  <img src="/public/screenshot_1.png" alt="D-Lab Flow 객체 탐지 데모 스크린샷" width="50%">
+</div>
 
 **[라이브 데모 사이트 확인하기](https://dlabflow-yolov5s-onnx-react.vercel.app/)**
 
