@@ -1,0 +1,666 @@
+:root {
+  --primary-color: #10b981;
+  --primary-dark: #059669;
+  --danger-color: #ef4444;
+  --danger-dark: #dc2626;
+  --background-color: #111827;
+  --card-bg: rgba(17, 24, 39, 0.7);
+  --text-color: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: rgba(16, 185, 129, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background: linear-gradient(135deg, #111827, #000, #0f172a); /* 더 입체적인 배경 */
+  color: var(--text-color);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  overflow-y: auto; /* 세로 스크롤 허용 */
+  -webkit-font-smoothing: antialiased; /* 폰트 렌더링 개선 */
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em; /* 가독성 향상 */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  position: relative;
+  z-index: 10;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: linear-gradient(to right, #10b981, #059669);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--primary-color);
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  color: var(--primary-color);
+}
+
+/* Status indicators */
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Confidence slider */
+.confidence-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.confidence-slider-container label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.confidence-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 6px;
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 3px;
+  outline: none;
+}
+
+.confidence-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confidence-slider::-webkit-slider-thumb:hover {
+  background: var(--primary-dark);
+  transform: scale(1.2);
+}
+
+.confidence-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.confidence-slider::-moz-range-thumb:hover {
+  background: var(--primary-dark);
+  transform: scale(1.2);
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* 수직 중앙 정렬 */
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 60vh; /* 최소 높이 설정하여 항상 충분한 공간 확보 */
+  position: relative; /* 자식 요소 정확한 배치를 위한 포지셔닝 */
+}
+
+/* Card component */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto; /* 중앙 정렬을 위한 마진 추가 */
+  display: flex; /* 플렉스 컨테이너로 변경 */
+  flex-direction: column;
+  align-items: center; /* 내부 콘텐츠 중앙 정렬 */
+  justify-content: center;
+}
+
+.loading-card {
+  background-color: rgba(17, 24, 39, 0.7);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 300px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+}
+
+.error-card {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 300px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+}
+
+.start-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 320px;
+  min-height: 300px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  background-color: rgba(17, 24, 39, 0.85);
+  z-index: 20;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 500px;
+  width: 100%;
+}
+
+.detections-card {
+  margin-top: 1rem;
+  background-color: rgba(17, 24, 39, 0.85); /* 더 진한 배경 */
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 1000px; /* 카메라 컨테이너와 일치 */
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center; /* 중앙 정렬 */
+}
+
+/* Button component */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 0.75rem; /* 더 둥근 모서리 */
+  font-size: 1rem;
+  font-weight: 700; /* 더 굵게 */
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  min-width: 150px; /* 최소 너비 */
+}
+
+.start-button {
+  background: linear-gradient(to right, #10b981, #059669);
+  color: black;
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+  margin-top: 1rem;
+}
+
+.start-button:hover {
+  background: linear-gradient(to right, #059669, #047857);
+}
+
+.stop-button {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.stop-button:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Badge component */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.fps-badge {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.processing-badge {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+.detection-badge {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.detection-badges {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Camera view */
+.camera-view {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.camera-container {
+  width: 100%;
+  max-width: 1000px; /* Increased from 800px */
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  background-color: #000;
+  aspect-ratio: 16/9; /* Changed from 4/3 for better widescreen display */
+  margin: 0 auto;
+  height: 70vh; /* Set height relative to viewport */
+  max-height: 800px; /* Maximum height */
+}
+
+.detection-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover; /* Changed from contain to cover to match webcam */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.camera-controls {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Icons */
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-loader {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-top-color: #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.icon-camera::before {
+  content: "📷";
+  font-size: 1.25rem;
+}
+
+.icon-power::before {
+  content: "⏻";
+  font-size: 1.25rem;
+}
+
+.icon-zap::before {
+  content: "⚡";
+  font-size: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  margin: 0 auto 1.5rem;
+}
+
+.loading-spinner .icon-loader {
+  width: 3rem;
+  height: 3rem;
+  border-width: 3px;
+}
+
+.start-icon, .error-icon {
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(to right, #10b981, #059669);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.error-icon {
+  background: linear-gradient(to right, #ef4444, #dc2626);
+}
+
+/* Footer */
+.footer {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.footer p {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .status-indicators {
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .confidence-slider-container {
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .confidence-slider {
+    width: 80px;
+  }
+
+  .card {
+    padding: 1.75rem 1.5rem;
+    min-width: 90%;
+    max-width: 90%;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.125rem;
+  }
+
+  h2 {
+    font-size: 1.125rem;
+  }
+
+  .app-container {
+    min-height: 100vh;
+    min-height: -webkit-fill-available; /* iOS Safari compatibility */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-content {
+    padding: 0.75rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .camera-container {
+    aspect-ratio: 16/9;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0.75rem;
+    height: 45vh; /* 모바일에서 적절한 높이 */
+    max-height: none; /* 모바일에서 최대 높이 제한 제거 */
+    margin-bottom: 0.5rem; /* 아래 여백 추가 */
+  }
+
+  .detections-card {
+    max-width: 100%;
+    border-radius: 0.75rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem; /* 아래 여백 추가 */
+    padding: 1.25rem 1rem;
+  }
+
+  .detection-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* 배지 중앙 정렬 */
+  }
+
+  .detection-badge {
+    margin: 0.25rem;
+    font-size: 0.8rem; /* 가독성 개선 */
+    padding: 0.375rem 0.75rem; /* 터치 영역 확대 */
+  }
+
+  /* 모바일에서 로딩/에러 카드 스타일 */
+  .loading-card, .error-card, .start-card {
+    position: fixed; /* 화면에 고정 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 350px;
+    z-index: 30;
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .start-button {
+    width: 100%;
+    max-width: 250px; /* 버튼 최대 너비 */
+  }
+
+  .camera-controls {
+    bottom: 1.5rem; /* 조금 더 아래로 */
+  }
+
+  .stop-button {
+    padding: 0.75rem 2rem; /* 더 큰 터치 영역 */
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .logo-container {
+    gap: 0.5rem;
+  }
+
+  .logo {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  h1 {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+  }
+
+  .header {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .main-content {
+    padding: 0.5rem;
+  }
+
+  .camera-container {
+    height: 38vh; /* 작은 기기에서 더 작게 */
+    border-radius: 0.5rem; /* 더 작은 둥근 모서리 */
+  }
+
+  .button {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .detections-card {
+    padding: 1rem 0.75rem;
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .card {
+    padding: 1.5rem 1rem;
+    border-radius: 0.75rem;
+  }
+
+  .loading-spinner .icon-loader {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .start-icon, .error-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .footer {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .footer p {
+    width: 90%;
+  }
+}
+
+/* 모바일 터치 개선 */
+.button {
+  min-height: 44px; /* iOS 권장 터치 영역 */
+  touch-action: manipulation; /* 더블탭 줌 방지 */
+}
+
+.camera-container {
+  touch-action: none; /* 스크롤/줌 방지 */
+}
