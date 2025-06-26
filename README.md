@@ -16,6 +16,10 @@
 
 ![D-Lab Flow 객체 탐지 데모 스크린샷](/public/screenshot_1.jpg)
 
+**[라이브 데모 사이트 확인하기](https://dlabflow-yolov5s-onnx-react.vercel.app/)**
+
+브라우저에서 바로 실시간 객체 감지 기능을 경험해보세요. 모바일 장치에서도 접속 가능합니다.
+
 ## 필수 조건
 
 - Node.js (v16 이상)
