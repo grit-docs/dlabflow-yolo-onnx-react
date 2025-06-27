@@ -1,8 +1,8 @@
 /**
- * D-Lab Flow 실시간 객체 감지 데모
+ * D-Lab Flow 실시간 객체 탐지 데모
  *
- * 이 애플리케이션은 ONNX Runtime을 사용하여 YOLOv5 모델로 실시간 객체 감지를 수행합니다.
- * 브라우저에서 완전히 동작하며 사용자의 카메라를 통해 객체를 감지하고 바운딩 박스로 표시합니다.
+ * 이 애플리케이션은 ONNX Runtime을 사용하여 YOLOv5 모델로 실시간 객체 탐지를 수행합니다.
+ * 브라우저에서 완전히 동작하며 사용자의 카메라를 통해 객체를 탐지하고 바운딩 박스로 표시합니다.
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Webcam from 'react-webcam'
@@ -28,7 +28,6 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [detections, setDetections] = useState([]);
-  const [fps, setFps] = useState(0);
   const [debugMode] = useState(true);
 
 
@@ -86,7 +85,6 @@ function App() {
     }
     setIsDetecting(false);
     setDetections([]);
-    setFps(0);
   };
 
   const detectObjects = useCallback(async () => {
@@ -106,7 +104,6 @@ function App() {
       canvas.width = videoWidth;
       canvas.height = videoHeight;
 
-      const startTime = performance.now();
       setIsProcessing(true);
       try {
         // 추론용 캔버스 생성 (모바일 성능 개선을 위해 스케일 조정)
@@ -124,16 +121,11 @@ function App() {
         const output = results[Object.keys(results)[0]];
         const currentDetections = processDetections(output.data, output.dims, imgWidth, imgHeight, videoWidth, videoHeight);
 
-        // 감지된 객체를 타임스탬프 없이 바로 설정
+        // 탐지된 객체를 타임스탬프 없이 바로 설정
         setDetections(currentDetections);
 
-        // 현재 감지된 객체들만 바로 그리기
+        // 현재 탐지된 객체들만 바로 그리기
         drawBoundingBoxes(currentDetections, ctx, canvas.width, canvas.height);
-
-        const endTime = performance.now();
-        const frameTime = endTime - startTime;
-        const currentFps = Math.round(1000 / frameTime);
-        setFps(prevFps => Math.round((prevFps * 0.9) + (currentFps * 0.1)));
       } catch (error) {
         console.error('Detection processing error:', error);
       } finally {
@@ -144,8 +136,11 @@ function App() {
     }
 
     if (isDetecting && !isProcessing) {
-      animationRef.current = requestAnimationFrame(detectObjects);
+      animationRef.current = setTimeout(() => {
+        detectObjects();
+      }, 150); // 초당 약 6-7회, 적절한 균형점
     }
+
   }, [isDetecting, classes]);
 
   // Process detections from model output
@@ -166,7 +161,7 @@ function App() {
     }
 
     const rawDetections = [];
-    // 클래스별 감지 카운터 초기화
+    // 클래스별 탐지 카운터 초기화
     const classDetections = {};
 
     for (let i = 0; i < numDetections; i++) {
@@ -209,7 +204,7 @@ function App() {
 
         // Log individual detection with high confidence (only in debug mode)
         if (debugMode) {
-          console.log(`감지된 객체: ${className}, 인식률: ${(confidence * 100).toFixed(2)}%, 위치: [x=${Math.round(x)}, y=${Math.round(y)}]`);
+          console.log(`탐지된 객체: ${className}, 인식률: ${(confidence * 100).toFixed(2)}%, 위치: [x=${Math.round(x)}, y=${Math.round(y)}]`);
         }
 
         rawDetections.push({
@@ -228,17 +223,17 @@ function App() {
     if (debugMode) {
       if (Object.keys(classDetections).length > 0) {
         console.log('======== 추론 결과 요약 ========');
-        console.log(`총 감지된 객체 수: ${rawDetections.length}개 (NMS 적용 전), ${detections.length}개 (NMS 적용 후)`);
+        console.log(`총 탐지된 객체 수: ${rawDetections.length}개 (NMS 적용 전), ${detections.length}개 (NMS 적용 후)`);
 
-        // 클래스별 감지 결과 및 인식률 출력
+        // 클래스별 탐지 결과 및 인식률 출력
         Object.keys(classDetections).forEach(className => {
           const stats = classDetections[className];
           const avgConfidence = stats.confidenceSum / stats.count;
-          console.log(`클래스: ${className}, 감지 수: ${stats.count}개, 평균 인식률: ${(avgConfidence * 100).toFixed(2)}%, 최고 인식률: ${(stats.highestConfidence * 100).toFixed(2)}%`);
+          console.log(`클래스: ${className}, 탐지 수: ${stats.count}개, 평균 인식률: ${(avgConfidence * 100).toFixed(2)}%, 최고 인식률: ${(stats.highestConfidence * 100).toFixed(2)}%`);
         });
         console.log('===============================');
       } else {
-        console.log('감지된 객체가 없습니다.');
+        console.log('탐지된 객체가 없습니다.');
       }
     }
 
@@ -380,10 +375,10 @@ function App() {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'medium'; // high에서 medium으로 조정
 
-      // 캔버스 클리어 - 이제 비디오를 그리지 않고 감지 결과만 표시
+      // 캔버스 클리어 - 이제 비디오를 그리지 않고 탐지 결과만 표시
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      // 모든 감지된 객체 사용 (필터링 없음)
+      // 모든 탐지된 객체 사용 (필터링 없음)
       const recentDetections = detections;
 
       // 비디오 프레임은 더 이상 캔버스에 그리지 않음 (Webcam 컴포넌트가 배경으로 표시됨)
@@ -400,9 +395,9 @@ function App() {
         console.log(`Drawing ${recentDetections.length} bounding boxes - Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
       }
 
-      // 최종 화면에 표시되는 감지 결과 요약 (디버그 모드에서만)
+      // 최종 화면에 표시되는 탐지 결과 요약 (디버그 모드에서만)
       if (debugMode && recentDetections.length > 0) {
-        console.log('======== 화면 표시 감지 결과 ========');
+        console.log('======== 화면 표시 탐지 결과 ========');
         // 클래스별 통계 계산을 위한 객체
         const finalClassStats = {};
 
@@ -446,7 +441,7 @@ function App() {
 
         // Log the detection information with more details in Korean (only in debug mode)
         if (debugMode) {
-          console.log(`최종 감지 #${i+1}: 클래스=${className}, 인식률=${(confidence * 100).toFixed(2)}%, 위치=[x=${Math.round(drawX)}, y=${Math.round(drawY)}, 너비=${Math.round(width)}, 높이=${Math.round(height)}]`);
+          console.log(`최종 탐지 #${i+1}: 클래스=${className}, 인식률=${(confidence * 100).toFixed(2)}%, 위치=[x=${Math.round(drawX)}, y=${Math.round(drawY)}, 너비=${Math.round(width)}, 높이=${Math.round(height)}]`);
         }
 
         // Generate random color based on class index
@@ -566,7 +561,7 @@ function App() {
               </div>
               <div>
                 <h1>D-Lab Flow</h1>
-                <p className="subtitle">실시간 객체 감지 데모</p>
+                <p className="subtitle">실시간 객체 탐지 데모</p>
               </div>
             </div>
 
@@ -590,11 +585,6 @@ function App() {
                   disabled={!isModelLoaded || isModelLoading}
                 />
               </div>
-              {fps > 0 && (
-                  <Badge className="fps-badge">
-                    {fps} FPS
-                  </Badge>
-              )}
               {isProcessing && (
                   <Badge className="processing-badge">
                     <Icon name="zap" />
@@ -634,7 +624,7 @@ function App() {
                 <div>
                   <Icon name="logo2" />
                 </div>
-                <h2>D-Lab Flow 실시간 객체 감지 데모</h2>
+                <h2>D-Lab Flow 실시간 객체 탐지 데모</h2>
                 <p>카메라 시작 버튼을 눌러주세요</p>
                 <Button
                     onClick={startCamera}
@@ -685,7 +675,7 @@ function App() {
                           }
                         }
 
-                        // 카메라 스트림 획득 후 즉시 감지 시작 (requestAnimationFrame 사용)
+                        // 카메라 스트림 획득 후 즉시 탐지 시작 (requestAnimationFrame 사용)
                         requestAnimationFrame(detectObjects);
                       }}
                       onUserMediaError={(error) => {
@@ -713,7 +703,7 @@ function App() {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        zIndex: 2, // 웹캠보다 높은 z-index로 감지 결과만 표시
+                        zIndex: 2, // 웹캠보다 높은 z-index로 탐지 결과만 표시
                         objectFit: 'cover',
                         borderRadius: 'inherit', // 부모 요소의 둥근 모서리 상속
                         touchAction: 'none', // 터치 이벤트 방지
@@ -744,7 +734,7 @@ function App() {
                 <Card className="detections-card">
                   <h3>
                     {detections.length > 0
-                        ? `감지된 객체 (${detections.length})`
+                        ? `탐지된 객체 (${detections.length})`
                       : '객체를 카메라에 비춰보세요'}
                   </h3>
                   {detections.length > 0 ? (
@@ -766,7 +756,7 @@ function App() {
                   ) : isDetecting ? (
                       <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                         <p style={{ color: 'var(--text-secondary)' }}>
-                          감지된 객체가 없습니다
+                          탐지된 객체가 없습니다
                         </p>
                         <p style={{ color: 'var(--primary-color)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                           현재 신뢰도 기준: {Math.round(confidenceThreshold * 100)}% 이상
@@ -777,7 +767,7 @@ function App() {
                       </div>
                   ) : (
                       <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                        카메라에 객체를 비추면 여기에 감지 결과가 표시됩니다
+                        카메라에 객체를 비추면 여기에 탐지 결과가 표시됩니다
                       </p>
                   )}
                 </Card>
@@ -787,7 +777,7 @@ function App() {
 
         {/* Footer Info */}
         <div className="footer">
-          <p>💡 D-Lab Flow에서 생성한 인공지능 모델을 사용한 실시간 객체 감지 데모</p>
+          <p>💡 D-Lab Flow에서 생성한 인공지능 모델을 사용한 실시간 객체 탐지 데모</p>
         </div>
       </div>
   );
