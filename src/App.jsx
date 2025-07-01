@@ -19,131 +19,126 @@ function App() {
   const sessionRef = useRef(null);
   const animationRef = useRef(null);
   const streamRef = useRef(null);
+  const scaleCanvasRef = useRef(document.createElement('canvas'));
+
+  const detectionMemoryRef = useRef([]); // 최신 탐지 결과 + 유지할 이전 결과 포함
+  const MAX_MISSED_FRAMES = 3; // 객체가 안 보여도 몇 프레임 유지
 
   // State variables
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [classes, setClasses] = useState([]);
   const [isDetecting, setIsDetecting] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [detections, setDetections] = useState([]);
-  const [debugMode] = useState(true);
+  const [debugMode] = useState(false);
 
 
+  // 모델 로드
   useEffect(() => {
     async function loadModel() {
       try {
         setIsModelLoading(true);
-        const classesResponse = await fetch('/models/classes.json');
-        const classesData = await classesResponse.json();
-        setClasses(classesData);
-        const modelPath = '/models/model.onnx';
-
-        // ONNX Runtime 최적화 옵션 추가
-        const session = await ort.InferenceSession.create(modelPath, {
-          executionProviders: ['webgl', 'cpu'], // WebGL 우선, CPU 대체
-          graphOptimizationLevel: 'all', // 그래프 최적화
-          enableCpuMemArena: false, // 메모리 아레나 비활성화 (모바일에서 더 나음)
-          enableMemPattern: false, // 메모리 패턴 비활성화
+        const res = await fetch('/models/classes.json');
+        setClasses(await res.json());
+        const session = await ort.InferenceSession.create('/models/model.onnx', {
+          executionProviders: ['webgpu', 'webgl', 'cpu'],
+          graphOptimizationLevel: 'all',
+          enableCpuMemArena: false,
+          enableMemPattern: false,
         });
-
         sessionRef.current = session;
         setIsModelLoaded(true);
-        setIsModelLoading(false);
-      } catch (error) {
-        console.error('Error loading model:', error);
+      } catch (e) {
+        console.error('Error loading model:', e);
         setErrorMessage('모델 로딩 오류. public/models 디렉토리에 model.onnx 파일이 있는지 확인하세요.');
+      } finally {
         setIsModelLoading(false);
       }
     }
     loadModel();
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     };
   }, []);
 
+  // 렌더링 루프
+  const drawLoop = useCallback(() => {
+    const canvas = canvasRef.current;
+    const video = webcamRef.current?.video;
+    if (!canvas || !video) return;
+    // 캔버스 크기를 비디오 해상도에 맞춤
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    // 그리기 전 클리어
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBoundingBoxes(detectionMemoryRef.current, ctx, canvas.width, canvas.height);
+    animationRef.current = requestAnimationFrame(drawLoop);
+  }, []);
 
-  const startCamera = async () => {
-    try {
-      setIsDetecting(true);
-    } catch (error) {
-      console.error('Camera access failed:', error);
-      setErrorMessage(`카메라에 접근할 수 없습니다: ${error.message || '권한을 확인하세요.'}`);
+  // 추론 루프
+  const inferenceLoop = useCallback(async () => {
+    if (!isDetecting || !webcamRef.current || !sessionRef.current) return;
+    const video = webcamRef.current.video;
+    if (video.readyState === 4) {
+      const scaleCanvas = scaleCanvasRef.current;
+      const factor = 0.5;
+      scaleCanvas.width = Math.floor(video.videoWidth * factor);
+      scaleCanvas.height = Math.floor(video.videoHeight * factor);
+      const sctx = scaleCanvas.getContext('2d');
+      sctx.drawImage(video, 0, 0, scaleCanvas.width, scaleCanvas.height);
+      const imageData = sctx.getImageData(0, 0, scaleCanvas.width, scaleCanvas.height);
+      const [input, iw, ih] = await prepareInput(imageData);
+      const results = await sessionRef.current.run({ images: input });
+      const out = results[Object.keys(results)[0]];
+      const newDetections = processDetections(
+          out.data,
+          out.dims,
+          iw,
+          ih,
+          video.videoWidth,
+          video.videoHeight
+      );
+      if (newDetections.length > 0) {
+        detectionMemoryRef.current = newDetections.map(d => ({ ...d, missed: 0 }));
+      } else {
+        detectionMemoryRef.current = detectionMemoryRef.current
+            .map(d => ({ ...d, missed: d.missed + 1 }))
+            .filter(d => d.missed <= MAX_MISSED_FRAMES);
+      }
+      setDetections(detectionMemoryRef.current);
     }
+    setTimeout(inferenceLoop, 10);
+  }, [isDetecting]);
+
+  // isDetecting 변경시 루프 시작/중지
+  useEffect(() => {
+    if (isDetecting) {
+      requestAnimationFrame(drawLoop);
+      inferenceLoop();
+    } else {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    }
+  }, [isDetecting, drawLoop, inferenceLoop]);
+
+  // 카메라 시작
+  const startCamera = () => {
+    setIsDetecting(true);
   };
 
+  // 카메라 중지
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
-    }
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
     }
     setIsDetecting(false);
     setDetections([]);
   };
 
-  const detectObjects = useCallback(async () => {
-    if (!webcamRef.current || !canvasRef.current || !sessionRef.current || !isDetecting) return;
-
-    const video = webcamRef.current.video;
-    const canvas = canvasRef.current;
-    if (!video || video.readyState !== 4 || video.paused) {
-      if (isDetecting) animationRef.current = requestAnimationFrame(detectObjects);
-      return;
-    }
-
-    try {
-      const ctx = canvas.getContext('2d');
-      const videoWidth = video.videoWidth;
-      const videoHeight = video.videoHeight;
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-
-      setIsProcessing(true);
-      try {
-        // 추론용 캔버스 생성 (모바일 성능 개선을 위해 스케일 조정)
-        const scaleCanvas = document.createElement('canvas');
-        const scaleFactor = 1.0; // 모바일 성능을 위해 원본 크기로 유지
-        scaleCanvas.width = Math.floor(videoWidth * scaleFactor);
-        scaleCanvas.height = Math.floor(videoHeight * scaleFactor);
-        const scaleCtx = scaleCanvas.getContext('2d');
-        scaleCtx.drawImage(video, 0, 0, scaleCanvas.width, scaleCanvas.height);
-
-        const imageData = scaleCtx.getImageData(0, 0, scaleCanvas.width, scaleCanvas.height);
-        const [input, imgWidth, imgHeight] = await prepareInput(imageData);
-        const feeds = { images: input };
-        const results = await sessionRef.current.run(feeds);
-        const output = results[Object.keys(results)[0]];
-        const currentDetections = processDetections(output.data, output.dims, imgWidth, imgHeight, videoWidth, videoHeight);
-
-        // 탐지된 객체를 타임스탬프 없이 바로 설정
-        setDetections(currentDetections);
-
-        // 현재 탐지된 객체들만 바로 그리기
-        drawBoundingBoxes(currentDetections, ctx, canvas.width, canvas.height);
-      } catch (error) {
-        console.error('Detection processing error:', error);
-      } finally {
-        setIsProcessing(false);
-      }
-    } catch (error) {
-      console.error('Canvas operation error:', error);
-    }
-
-    if (isDetecting && !isProcessing) {
-      animationRef.current = setTimeout(() => {
-        detectObjects();
-      }, 150); // 초당 약 6-7회, 적절한 균형점
-    }
-
-  }, [isDetecting, classes]);
-
-  // Process detections from model output
+    // Process detections from model output
   const processDetections = (data, dims, imgWidth, imgHeight, canvasWidth, canvasHeight) => {
     const numDetections = dims[1];
 
@@ -375,14 +370,14 @@ function App() {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'medium'; // high에서 medium으로 조정
 
-      // 캔버스 클리어 - 이제 비디오를 그리지 않고 탐지 결과만 표시
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      if (detections.length > 0) {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      }
 
       // 모든 탐지된 객체 사용 (필터링 없음)
       const recentDetections = detections;
 
       // 비디오 프레임은 더 이상 캔버스에 그리지 않음 (Webcam 컴포넌트가 배경으로 표시됨)
-
       if (debugMode && webcamRef.current && webcamRef.current.video) {
         const video = webcamRef.current.video;
         if (video.readyState === 4) {
@@ -427,11 +422,6 @@ function App() {
       ctx.font = 'bold 18px Arial'; // Made font bold for better visibility
       ctx.textBaseline = 'top';
 
-      // 캔버스 오버레이 배경을 더 투명하게 조정
-      // 실제 카메라 영상이 더 잘 보이도록 함
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.0)';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
       // Draw each filtered detection
       recentDetections.forEach((detection, i) => {
         const [drawX, drawY, width, height] = detection.bbox;
@@ -449,15 +439,11 @@ function App() {
 
         // 더 얇은 테두리로 바운딩 박스 그리기
         ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
-        ctx.lineWidth = 2; // 줄어든 선 두께로 바운딩 박스를 더 깔끔하게 표시
-
-        // 더 투명한 내부 색상 사용
-        ctx.fillStyle = `hsla(${hue}, 100%, 40%, 0.15)`; // 낮은 불투명도로 내부 색상 옅게 표시
+        ctx.lineWidth = 1;
 
         // Draw bounding box with more visible style
         ctx.beginPath();
         ctx.rect(drawX, drawY, width, height);
-        ctx.fill();
         ctx.stroke();
 
         // 라벨 배경도 약간 투명하게 조정
@@ -495,15 +481,6 @@ function App() {
 
         // 그림자 효과 제거
         ctx.shadowColor = 'transparent';
-
-        // 텍스트 외곽선 (선택적)
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
-        ctx.strokeText(
-            label,
-            labelX + 5,
-            labelY + 5
-        );
       });
 
       // Restore the canvas state
@@ -577,20 +554,11 @@ function App() {
                   value={confidenceThreshold * 100}
                   onChange={(e) => {
                     confidenceThreshold = Number(e.target.value) / 100;
-                    // 강제 리렌더링을 위한 더미 상태 업데이트
-                    setIsProcessing(prev => !prev);
-                    setIsProcessing(prev => !prev);
                   }}
                   className="confidence-slider"
                   disabled={!isModelLoaded || isModelLoading}
                 />
               </div>
-              {isProcessing && (
-                  <Badge className="processing-badge">
-                    <Icon name="zap" />
-                    처리 중
-                  </Badge>
-              )}
             </div>
           </div>
         </div>
@@ -674,9 +642,6 @@ function App() {
                             console.log("Canvas ready:", canvas.width, canvas.height);
                           }
                         }
-
-                        // 카메라 스트림 획득 후 즉시 탐지 시작 (requestAnimationFrame 사용)
-                        requestAnimationFrame(detectObjects);
                       }}
                       onUserMediaError={(error) => {
                         console.error("Camera access error:", error);
