@@ -61,12 +61,17 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  gap: 1rem; /* 로고와 슬라이더 사이 간격 확보 */
 }
+
+
 
 .logo-container {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1; /* 로고 컨테이너가 남은 공간 차지 */
+  min-width: 0; /* flex-shrink가 제대로 작동하도록 */
 }
 
 .logo {
@@ -106,33 +111,25 @@ h3 {
 
 /* Status indicators */
 .status-indicators {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-shrink: 0; /* 크기 축소 방지 */
 }
 
 /* Confidence slider */
 .confidence-slider-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   background-color: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
 }
 
 .confidence-slider-container label {
-  font-size: 0.75rem;
   font-weight: 500;
   color: var(--primary-color);
-  white-space: nowrap;
 }
 
 .confidence-slider {
   -webkit-appearance: none;
   appearance: none;
-  width: 100px;
   height: 6px;
   background: rgba(16, 185, 129, 0.2);
   border-radius: 3px;
@@ -286,6 +283,15 @@ h3 {
   transition: all 0.25s ease;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
   min-width: 150px; /* 최소 너비 */
+  outline: none; /* focus outline 제거 */
+}
+
+/* 모든 버튼의 focus 상태 제거 */
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .start-button {
@@ -475,28 +481,36 @@ button:disabled {
 /* Media queries for responsive design */
 @media (max-width: 768px) {
   .header-content {
-    flex-direction: row;
+    flex-direction: row; /* 세로 배치를 가로 배치로 되돌립니다. */
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0 0.5rem;
+    gap: 1rem;
   }
 
   .status-indicators {
-    width: auto;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    /* 너비 100%와 상단 마진을 제거하여 가로 배치에 맞게 수정합니다. */
+    margin-top: 0;
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .confidence-slider-container {
-    padding: 0.25rem 0.5rem;
-    margin-bottom: 0.25rem;
-    width: 100%;
-    justify-content: space-between;
+    max-width: 240px; /* 최대 너비 제한 */
+    margin: 0 auto; /* 중앙 정렬 */
   }
 
   .confidence-slider {
-    width: 80px;
+    width: 100%;
+  }
+
+  .camera-status-info {
+    min-height: 1.8em !important;
+    overflow: visible !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
   }
 
   .card {
@@ -605,8 +619,37 @@ button:disabled {
     font-size: 0.7rem;
   }
 
+  /* 작은 모바일에서 status-indicators 영역 고정 */
+  .status-indicators {
+    /* 너비 고정 대신 flex-shrink 사용 */
+    flex-shrink: 0;
+  }
+
+  .confidence-slider-container {
+    /* 너비 강제 지정을 제거하고 상위 규칙을 따르도록 함 */
+    padding: 0.4rem 0.4rem;
+  }
+
+  .confidence-slider-container label {
+    /* 너비 강제 지정을 제거하여 오른쪽 정렬이 유지되도록 함 */
+    font-size: 0.8rem;
+  }
+
+  .confidence-slider {
+    /* 너비 강제 지정을 제거하고 상위 규칙(width: 100%)을 따르도록 함 */
+  }
+
   .header {
     padding: 0.75rem 0.5rem;
+  }
+
+  /* 작은 모바일에서도 카메라 상태 정보 영역 고정 */
+  .camera-status-info {
+    min-height: 1.8em !important;
+    overflow: visible !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
   }
 
   .main-content {
@@ -663,6 +706,15 @@ button:disabled {
 
 .camera-container {
   touch-action: none; /* 스크롤/줌 방지 */
+}
+
+/* 아주 작은 모바일 기기 */
+@media (max-width: 380px) {
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
 }
 
 

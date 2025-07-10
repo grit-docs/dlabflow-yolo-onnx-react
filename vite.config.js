@@ -1,11 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
   plugins: [
     react(),
-    basicSsl() // 안정적인 SSL 플러그인
+    basicSsl(), // 안정적인 SSL 플러그인
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'node_modules/onnxruntime-web/dist/*.{wasm,mjs}',
+          dest: 'ort-wasm-files'
+        }
+      ]
+    })
   ],
   server: {
     host: '0.0.0.0',
@@ -19,9 +28,6 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
-  },
-  optimizeDeps: {
-    exclude: ['onnxruntime-web'],
   },
   assetsInclude: ['**/*.wasm'],
 })
