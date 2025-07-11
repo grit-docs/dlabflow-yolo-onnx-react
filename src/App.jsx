@@ -972,12 +972,9 @@ function App() {
         // Log individual detection with high confidence (only in debug mode)
         if (debugMode && rawDetections.length < 5) {
           console.log(`탐지된 객체: ${className}, 인식률: ${(confidence * 100).toFixed(2)}%, 위치: [x=${Math.round(bbox[0])}, y=${Math.round(bbox[1])}, w=${Math.round(bbox[2])}, h=${Math.round(bbox[3])}]`);
-        if (debugMode && rawDetections.length < 5) {
-          console.log(`탐지된 객체: ${className}, 인식률: ${(confidence * 100).toFixed(2)}%, 위치: [x=${Math.round(bbox[0])}, y=${Math.round(bbox[1])}, w=${Math.round(bbox[2])}, h=${Math.round(bbox[3])}]`);
         }
 
         rawDetections.push({
-          bbox: bbox,
           bbox: bbox,
           class: className,
           confidence: confidence,
@@ -1264,9 +1261,6 @@ function App() {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 18px Arial';
         ctx.fillText(label, labelX + 5, labelY + 5);
-
-        // 그림자 효과 제거
-        ctx.shadowColor = 'transparent';
 
         // 그림자 효과 제거
         ctx.shadowColor = 'transparent';
