@@ -33,8 +33,8 @@
 
 1. 이 저장소를 클론합니다:
    ```
-   git clone https://github.com/grit-docs/dlabflow-yolov5s-onnx-react.git
-   cd dlabflow-yolov5s-onnx-react
+   git clone https://github.com/grit-docs/dlabflow-yolo-onnx-react.git
+   cd dlabflow-yolo-onnx-react
    ```
 
 2. 종속성을 설치합니다:
@@ -50,11 +50,12 @@
      git clone https://github.com/ultralytics/yolov5
      cd yolov5
      pip install -r requirements.txt
+     pip install "numpy<2"
      ```
-   - D-Lab Flow에서 학습한 모델의 가중치 파일(.pt)을 다운로드 받아 YOLOv5 폴더에 저장합니다
+   - D-Lab Flow에서 학습한 모델의 가중치 파일(.pt)을 다운로드 받아 YOLOv5 폴더에 저장합니다.
    - 변환 스크립트를 실행하여 .pt 파일을 ONNX로 변환합니다:
      ```bash
-     python export.py --weights 다운로드받은모델.pt --include onnx
+     python export.py --weights <path_to_weights> --include onnx
      ```
    - 변환된 `.onnx` 파일을 `public/models/` 디렉토리에 `model.onnx`라는 이름으로 복사합니다.
    - **(선택 사항)** 클래스 이름을 직접 지정하려면, 원하는 클래스 이름들을 담은 `classes.json` 파일을 생성하여 `public/models/` 디렉토리에 복사하세요. 이렇게 하면 탐지된 객체의 클래스 이름을 더 명확하게 표시할 수 있습니다.
